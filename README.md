@@ -4,6 +4,8 @@
 
 The Task Manager Project is a web application designed to help users manage their tasks efficiently.
 
+🔴 Currently working on this project
+
 ### The task we were given in school:
 
 *To develop a web service using docker compose that has a frontend and a backend with two phases - build and production. The web service must have authentication and authorization to the openid provider, which is in the same infrastructure. Also, must store user data in DBMS cluster through load balancer.*
