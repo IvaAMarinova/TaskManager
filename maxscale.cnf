@@ -42,10 +42,3 @@ type=listener
 service=GaleraService
 protocol=MariaDBClient
 port=4006
-
-# Admin Service
-[admin]
-type=service
-router=cli
-user=admin
-password=adminpass
