@@ -1,4 +1,4 @@
-GRANT ALL PRIVILEGES ON *.* TO 'maxscale_user'@'%';
+GRANT ALL PRIVILEGES ON *.* TO 'maxuser'@'%';
 FLUSH PRIVILEGES;
 
 CREATE DATABASE tasks;
