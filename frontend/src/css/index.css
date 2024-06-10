@@ -1,0 +1,17 @@
+body {
+    font-family: Arial, sans-serif;
+  }
+  
+  .App {
+    text-align: center;
+  }
+  
+  input, textarea {
+    display: block;
+    margin: 10px auto;
+  }
+  
+  button {
+    margin: 10px;
+  }
+  

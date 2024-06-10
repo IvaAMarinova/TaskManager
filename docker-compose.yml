@@ -8,6 +8,12 @@ services:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_USER: maxuser
       MYSQL_PASSWORD: maxpassword
+    command:
+      - --ssl-ca=/etc/mysql/certs/ca.crt
+      - --ssl-cert=/etc/mysql/certs/mysql.crt
+      - --ssl-key=/etc/mysql/certs/mysql.key
+      - --ssl=1
+      - --bind-address=0.0.0.0
     ports:
       - "3307:3306"
     networks:
@@ -23,6 +29,12 @@ services:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_USER: maxuser
       MYSQL_PASSWORD: maxpassword
+    command:
+      - --ssl-ca=/etc/mysql/certs/ca.crt
+      - --ssl-cert=/etc/mysql/certs/mysql.crt
+      - --ssl-key=/etc/mysql/certs/mysql.key
+      - --ssl=1
+      - --bind-address=0.0.0.0
     ports:
       - "3308:3306"
     networks:

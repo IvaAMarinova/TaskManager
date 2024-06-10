@@ -4,7 +4,7 @@
 
 The Task Manager Project is a web application designed to help users manage their tasks efficiently.
 
-🔴 Currently working on this project
+🔴 **Currently working on this project**
 
 ### The task we were given in school:
 
