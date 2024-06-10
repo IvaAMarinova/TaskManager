@@ -13,7 +13,7 @@ The Task Manager Project is a web application designed to help users manage thei
 ## Technologies Used 🛠️
 
 ### Frontend
-- **React**: A JavaScript library for building user interfaces.
+- **HTML and CSS**: Plain old html and css 😊.
 
 ### Backend
 - **Flask**: A lightweight WSGI web application framework in Python.
@@ -44,7 +44,7 @@ The application is containerized using Docker, allowing for easy setup and deplo
 
 ## Running the Application ▶️
 
-1. **Frontend**: The React application provides the user interface.
+1. **Frontend**: The HTML and CSS application provides the user interface.
 2. **Backend**: The Flask application handles the business logic.
 3. **Database**: The MariaDB Galera cluster ensures data consistency and high availability.
 4. **Authentication**: Keycloak manages user authentication and authorization.

@@ -1,10 +1,22 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, g
 from flask_cors import CORS
 import mysql.connector
 import os
+from keycloak import KeycloakOpenID
+from keycloak.exceptions import KeycloakAuthenticationError, KeycloakError
+from functools import wraps
 
 app = Flask(__name__, static_folder='../frontend/build')
 CORS(app)
+
+# Keycloak configuration
+keycloak_server_url = "http://localhost:8080"
+keycloak_realm = "TaskManager"
+keycloak_client_id = "task-client"
+
+keycloak_openid = KeycloakOpenID(server_url=keycloak_server_url,
+                                 client_id=keycloak_client_id,
+                                 realm_name=keycloak_realm)
 
 db_config = {
     'user': 'maxuser',
@@ -17,6 +29,22 @@ db_config = {
 def get_db_connection():
     return mysql.connector.connect(**db_config)
 
+def keycloak_token_required(f):
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        token = request.headers.get('Authorization', None)
+        if token:
+            token = token.split(' ')[1]  # Remove 'Bearer' prefix
+            try:
+                userinfo = keycloak_openid.userinfo(token)
+                g.user = userinfo  # Attach user info to global object
+            except KeycloakError as e:
+                return jsonify({'message': 'Unauthorized'}), 401
+        else:
+            return jsonify({'message': 'Token is missing'}), 401
+        return f(*args, **kwargs)
+    return wrap
+
 @app.route('/')
 def index():
     return send_from_directory(app.static_folder, 'index.html')
@@ -25,7 +53,28 @@ def index():
 def serve_static_files(path):
     return send_from_directory(app.static_folder, path)
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'GET':
+        return send_from_directory(app.static_folder, 'login.html')
+    elif request.method == 'POST':
+        credentials = request.json
+        username = credentials.get('username')
+        password = credentials.get('password')
+
+        try:
+            token = keycloak_openid.token(username, password)
+            return jsonify({
+                'access_token': token['access_token'],
+                'refresh_token': token['refresh_token'],
+                'expires_in': token['expires_in'],
+                'refresh_expires_in': token['refresh_expires_in']
+            }), 200
+        except KeycloakAuthenticationError:
+            return jsonify({'message': 'Invalid credentials'}), 401
+
 @app.route('/tasks', methods=['GET'])
+@keycloak_token_required
 def get_tasks():
     connection = get_db_connection()
     cursor = connection.cursor(dictionary=True)
@@ -36,6 +85,7 @@ def get_tasks():
     return jsonify(tasks), 200
 
 @app.route('/tasks', methods=['POST'])
+@keycloak_token_required
 def add_task():
     new_task = request.json
     name = new_task['name']
@@ -51,6 +101,7 @@ def add_task():
     return jsonify({'message': 'Task added successfully!'}), 201
 
 @app.route('/tasks/<int:id>', methods=['PUT'])
+@keycloak_token_required
 def update_task(id):
     updated_task = request.json
     name = updated_task.get('name')
@@ -66,6 +117,7 @@ def update_task(id):
     return jsonify({'message': 'Task updated successfully!'}), 200
 
 @app.route('/tasks/<int:id>', methods=['DELETE'])
+@keycloak_token_required
 def delete_task(id):
     connection = get_db_connection()
     cursor = connection.cursor()
