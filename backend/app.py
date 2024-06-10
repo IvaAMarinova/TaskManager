@@ -1,23 +1,21 @@
 from flask import Flask, request, jsonify, send_from_directory
-from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
+import mysql.connector
 import os
 
 app = Flask(__name__, static_folder='../frontend/build')
 CORS(app)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://maxuser:maxpassword@localhost:4006/tasks'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db_config = {
+    'user': 'maxuser',
+    'password': 'maxpassword',
+    'host': 'localhost',
+    'port': 4006,
+    'database': 'tasks'
+}
 
-db = SQLAlchemy(app)
-
-class Task(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255), nullable=False)
-    text = db.Column(db.Text, nullable=False)
-
-with app.app_context():
-    db.create_all()
+def get_db_connection():
+    return mysql.connector.connect(**db_config)
 
 @app.route('/')
 def index():
@@ -29,9 +27,13 @@ def serve_static_files(path):
 
 @app.route('/tasks', methods=['GET'])
 def get_tasks():
-    tasks = Task.query.all()
-    tasks_list = [{'id': task.id, 'name': task.name, 'text': task.text} for task in tasks]
-    return jsonify(tasks_list), 200
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute('SELECT * FROM tasks')
+    tasks = cursor.fetchall()
+    cursor.close()
+    connection.close()
+    return jsonify(tasks), 200
 
 @app.route('/tasks', methods=['POST'])
 def add_task():
@@ -39,34 +41,38 @@ def add_task():
     name = new_task['name']
     text = new_task['text']
 
-    task = Task(name=name, text=text)
-    db.session.add(task)
-    db.session.commit()
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute('INSERT INTO tasks (name, text) VALUES (%s, %s)', (name, text))
+    connection.commit()
+    cursor.close()
+    connection.close()
 
     return jsonify({'message': 'Task added successfully!'}), 201
 
 @app.route('/tasks/<int:id>', methods=['PUT'])
 def update_task(id):
-    task = Task.query.get(id)
-    if not task:
-        return jsonify({'message': 'Task not found'}), 404
-
     updated_task = request.json
-    task.name = updated_task.get('name', task.name)
-    task.text = updated_task.get('text', task.text)
+    name = updated_task.get('name')
+    text = updated_task.get('text')
 
-    db.session.commit()
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute('UPDATE tasks SET name = %s, text = %s WHERE id = %s', (name, text, id))
+    connection.commit()
+    cursor.close()
+    connection.close()
 
     return jsonify({'message': 'Task updated successfully!'}), 200
 
 @app.route('/tasks/<int:id>', methods=['DELETE'])
 def delete_task(id):
-    task = Task.query.get(id)
-    if not task:
-        return jsonify({'message': 'Task not found'}), 404
-
-    db.session.delete(task)
-    db.session.commit()
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute('DELETE FROM tasks WHERE id = %s', (id,))
+    connection.commit()
+    cursor.close()
+    connection.close()
 
     return jsonify({'message': 'Task deleted successfully!'}), 200
 
