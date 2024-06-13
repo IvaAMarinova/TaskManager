@@ -59,6 +59,28 @@ services:
     networks:
       - db-network
 
+  backend:
+    container_name: backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+
+  frontend:
+    container_name: frontend
+    build:
+      context: ./frontend-nextjs
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:5000
+
 networks:
   db-network:
     external: true

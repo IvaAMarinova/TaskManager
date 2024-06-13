@@ -9,7 +9,6 @@ from functools import wraps
 app = Flask(__name__, static_folder='../frontend/build')
 CORS(app)
 
-# Keycloak configuration
 keycloak_server_url = "http://localhost:8080"
 keycloak_realm = "TaskManager"
 keycloak_client_id = "task-client"
@@ -34,10 +33,10 @@ def keycloak_token_required(f):
     def wrap(*args, **kwargs):
         token = request.headers.get('Authorization', None)
         if token:
-            token = token.split(' ')[1]  # Remove 'Bearer' prefix
+            token = token.split(' ')[1]
             try:
                 userinfo = keycloak_openid.userinfo(token)
-                g.user = userinfo  # Attach user info to global object
+                g.user = userinfo
             except KeycloakError as e:
                 return jsonify({'message': 'Unauthorized'}), 401
         else:
