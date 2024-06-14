@@ -8,12 +8,12 @@ The Task Manager Project is a web application designed to help users manage thei
 
 ### The task we were given in school:
 
-*To develop a web service using docker compose that has a frontend and a backend with two phases - build and production. The web service must have authentication and authorization to the openid provider, which is in the same infrastructure. Also, must store user data in DBMS cluster through load balancer.*
+*To develop a web service using Docker Compose that has a frontend and a backend with two phases - build and production. The web service must have authentication and authorization to the OpenID provider, which is in the same infrastructure. Also, must store user data in a DBMS cluster through a load balancer.*
 
 ## Technologies Used 🛠️
 
 ### Frontend
-- **HTML and CSS**: Plain old html and css 😊.
+- **Next.js**: A React framework for production that includes features like server-side rendering and static site generation.
 
 ### Backend
 - **Flask**: A lightweight WSGI web application framework in Python.
@@ -44,7 +44,7 @@ The application is containerized using Docker, allowing for easy setup and deplo
 
 ## Running the Application ▶️
 
-1. **Frontend**: The HTML and CSS application provides the user interface.
+1. **Frontend**: The Next.js application provides the user interface.
 2. **Backend**: The Flask application handles the business logic.
 3. **Database**: The MariaDB Galera cluster ensures data consistency and high availability.
 4. **Authentication**: Keycloak manages user authentication and authorization.
