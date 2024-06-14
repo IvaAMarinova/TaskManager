@@ -1,7 +1,5 @@
-export default function Home() {
-  return (
-    <div>
-      <h1>Hello World</h1>
-    </div>
-  );
+import Link from 'next/link'
+ 
+export default function Page() {
+  return <Link href="/login">Login</Link>
 }
