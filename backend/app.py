@@ -7,7 +7,7 @@ from keycloak.exceptions import KeycloakAuthenticationError, KeycloakError
 from functools import wraps
 
 app = Flask(__name__, static_folder='../frontend/build')
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 keycloak_server_url = "http://localhost:8080"
 keycloak_realm = "TaskManager"
@@ -52,25 +52,36 @@ def index():
 def serve_static_files(path):
     return send_from_directory(app.static_folder, path)
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'GET':
-        return send_from_directory(app.static_folder, 'login.html')
-    elif request.method == 'POST':
-        credentials = request.json
-        username = credentials.get('username')
-        password = credentials.get('password')
+# @app.route('/login', methods=['GET', 'POST'])
+# def login():
+#     if request.method == 'GET':
+#         return send_from_directory(app.static_folder, 'login.html')
+#     elif request.method == 'POST':
+#         credentials = request.json
+#         username = credentials.get('username')
+#         password = credentials.get('password')
 
-        try:
-            token = keycloak_openid.token(username, password)
-            return jsonify({
-                'access_token': token['access_token'],
-                'refresh_token': token['refresh_token'],
-                'expires_in': token['expires_in'],
-                'refresh_expires_in': token['refresh_expires_in']
-            }), 200
-        except KeycloakAuthenticationError:
-            return jsonify({'message': 'Invalid credentials'}), 401
+#         try:
+#             token = keycloak_openid.token(username, password)
+#             return jsonify({
+#                 'access_token': token['access_token'],
+#                 'refresh_token': token['refresh_token'],
+#                 'expires_in': token['expires_in'],
+#                 'refresh_expires_in': token['refresh_expires_in']
+#             }), 200
+#         except KeycloakAuthenticationError:
+#             return jsonify({'message': 'Invalid credentials'}), 401
+
+@app.route('/login', methods=['POST'])
+def login():
+    credentials = request.json
+    username = credentials.get('username')
+    password = credentials.get('password')
+
+    if username == 'admin' and password == 'password':
+        return jsonify({'message': 'Login successful!', 'access_token': 'dummy_token'}), 200
+    else:
+        return jsonify({'message': 'Invalid credentials'}), 401
 
 @app.route('/tasks', methods=['GET'])
 @keycloak_token_required
@@ -128,4 +139,4 @@ def delete_task(id):
     return jsonify({'message': 'Task deleted successfully!'}), 200
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
