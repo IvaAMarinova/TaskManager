@@ -1,13 +1,13 @@
-from flask import Flask, request, jsonify, send_from_directory, g
+import logging
+from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 import mysql.connector
-import os
 from keycloak import KeycloakOpenID
 from keycloak.exceptions import KeycloakAuthenticationError, KeycloakError
 from functools import wraps
 
-app = Flask(__name__, static_folder='../frontend/build')
-CORS(app, resources={r"/*": {"origins": "*"}})
+app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*", "supports_credentials": True, "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"], "allow_headers": ["Content-Type", "Authorization"]}})
 
 keycloak_server_url = "http://localhost:8080"
 keycloak_realm = "TaskManager"
@@ -28,6 +28,22 @@ db_config = {
 def get_db_connection():
     return mysql.connector.connect(**db_config)
 
+class ListHandler(logging.Handler):
+    def __init__(self):
+        super().__init__()
+        self.log_list = []
+
+    def emit(self, record):
+        log_entry = self.format(record)
+        self.log_list.append(log_entry)
+
+log_handler = ListHandler()
+log_handler.setLevel(logging.DEBUG)
+log_formatter = logging.Formatter('%(levelname)s:%(message)s')
+log_handler.setFormatter(log_formatter)
+app.logger.addHandler(log_handler)
+app.logger.setLevel(logging.DEBUG)
+
 def keycloak_token_required(f):
     @wraps(f)
     def wrap(*args, **kwargs):
@@ -44,34 +60,22 @@ def keycloak_token_required(f):
         return f(*args, **kwargs)
     return wrap
 
-@app.route('/')
-def index():
-    return send_from_directory(app.static_folder, 'index.html')
-
-@app.route('/<path:path>')
-def serve_static_files(path):
-    return send_from_directory(app.static_folder, path)
-
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/login', methods=['POST'])
 def login():
-    if request.method == 'GET':
-        return send_from_directory(app.static_folder, 'login.html')
-    elif request.method == 'POST':
-        credentials = request.json
-        username = credentials.get('username')
-        password = credentials.get('password')
+    credentials = request.json
+    username = credentials.get('username')
+    password = credentials.get('password')
 
-        try:
-            token = keycloak_openid.token(username, password)
-            return jsonify({
-                'access_token': token['access_token'],
-                'refresh_token': token['refresh_token'],
-                'expires_in': token['expires_in'],
-                'refresh_expires_in': token['refresh_expires_in']
-            }), 200
-        except KeycloakAuthenticationError:
-            return jsonify({'message': 'Invalid credentials'}), 401
-
+    try:
+        token = keycloak_openid.token(username, password)
+        return jsonify({
+            'access_token': token['access_token'],
+            'refresh_token': token['refresh_token'],
+            'expires_in': token['expires_in'],
+            'refresh_expires_in': token['refresh_expires_in']
+        }), 200
+    except KeycloakAuthenticationError:
+        return jsonify({'message': 'Invalid credentials'}), 401
 
 @app.route('/tasks', methods=['GET'])
 @keycloak_token_required
@@ -82,8 +86,8 @@ def get_tasks():
     tasks = cursor.fetchall()
     cursor.close()
     connection.close()
+    print(tasks)
     return jsonify(tasks), 200
-
 
 @app.route('/tasks', methods=['POST'])
 @keycloak_token_required
@@ -99,7 +103,7 @@ def add_task():
     cursor.close()
     connection.close()
 
-    return jsonify({'message': 'Task added successfully!'}), 201
+    return {'message': 'Task added successfully!'}, 201
 
 @app.route('/tasks/<int:id>', methods=['PUT'])
 @keycloak_token_required
@@ -128,6 +132,13 @@ def delete_task(id):
     connection.close()
 
     return jsonify({'message': 'Task deleted successfully!'}), 200
+
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
+    return response
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

@@ -13,9 +13,26 @@ export default function Tasks() {
   const [newTask, setNewTask] = useState({ name: '', text: '' });
 
   useEffect(() => {
-    fetch('http://localhost:5000/tasks')
-      .then(response => response.json())
-      .then(data => setTasks(data))
+    const accessToken = localStorage.getItem('access_token');
+
+    fetch('http://127.0.0.1:5000/tasks', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (Array.isArray(data)) {
+          setTasks(data);
+        } else {
+          console.error('Fetched data is not an array:', data);
+        }
+      })
       .catch(error => console.error('Error fetching tasks:', error));
   }, []);
 
@@ -29,20 +46,49 @@ export default function Tasks() {
 
   const handleAddTask = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    fetch('http://localhost:5000/tasks', {
+    const accessToken = localStorage.getItem('access_token');
+
+    fetch('http://127.0.0.1:5000/tasks', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`
       },
       body: JSON.stringify(newTask)
     })
-    .then(response => response.json())
-    .then(data => {
-      setTasks([...tasks, data]);
-      setNewTask({ name: '', text: '' });
-    })
-    .catch(error => console.error('Error adding task:', error));
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(() => {
+        setNewTask({ name: '', text: '' });
+        return fetch('http://127.0.0.1:5000/tasks', {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
+        });
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (Array.isArray(data)) {
+          setTasks(data);
+        } else {
+          console.error('Fetched data is not an array:', data);
+        }
+      })
+      .catch(error => console.error('Error adding task:', error));
   };
+
+  useEffect(() => {
+    console.log(tasks);
+  }, [tasks]);
 
   return (
     <div className="p-5 font-sans">

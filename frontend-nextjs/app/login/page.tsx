@@ -14,21 +14,26 @@ export default function Page() {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5000/login', {
+      console.log('username:', username);
+      console.log('password length:', password);
+      
+      const response = await fetch('http://127.0.0.1:5000/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ username, password })
       });
+      
+      const data = await response.json();
+      console.log(data.logs);
 
       if (response.ok) {
-        const data = await response.json();
         if (data.access_token) {
+          localStorage.setItem('access_token', data.access_token);
           router.push('/tasks');
         }
       } else {
-        const data = await response.json();
         setError(data.message || 'Login failed');
       }
     } catch (error) {
